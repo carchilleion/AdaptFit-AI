@@ -75,6 +75,7 @@ app.post('/api/ai/chat/stream', validateChatMessage, async (req, res) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no'); // Prevent buffering on Render/Nginx
         res.flushHeaders();
 
         const provider = getAIProvider();
@@ -91,9 +92,9 @@ app.post('/api/ai/chat/stream', validateChatMessage, async (req, res) => {
 
         res.write('data: [DONE]\n\n');
         res.end();
-    } catch (error) {
+    } catch (error: any) {
         console.error('Stream chat error:', error);
-        res.write(`data: ${JSON.stringify({ error: 'Stream failed' })}\n\n`);
+        res.write(`data: ${JSON.stringify({ error: `Stream failed: ${error?.message || 'Unknown error'}` })}\n\n`);
         res.end();
     }
 });
@@ -104,6 +105,7 @@ app.get('/health', (_req, res) => {
         status: 'ok',
         message: 'Fitness AI Backend v2.0 is running',
         cacheSize: cacheService.size,
+        geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
         uptime: process.uptime(),
     });
 });
